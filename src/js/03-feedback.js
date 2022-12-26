@@ -1,35 +1,52 @@
-import throttle from 'lodash.throttle';
+import { save, load, remove } from './storage';
+const throttle = require('lodash.throttle');
 
-const formEl = document.querySelector('.feedback-form');
-const input = document.querySelector('input');
-const text = document.querySelector('textarea');
+const feedbackForm = document.querySelector('.feedback-form');
+const emailInput = document.querySelector('.feedback-form input');
+const messageInput = document.querySelector('.feedback-form textarea');
+const LOCALSTORAGE_KEY = 'feedback-form-state';
 
-const FEEDBACK = 'feedback-form-state';
+feedbackForm.addEventListener('submit', onFormSubmit);
+emailInput.addEventListener('input', throttle(saveDataOnImput, 500));
+messageInput.addEventListener('input', throttle(saveDataOnImput, 500));
 
-formEl.addEventListener('submit', onFormSubmit);
-formEl.addEventListener('input', throttle(onSetDataonLocalStorage, 500));
+updateInputs();
 
-let formData = {};
-
-function onSetDataonLocalStorage(e) {
-  formData[e.target.name] = e.target.value;
-  localStorage.setItem(FEEDBACK, JSON.stringify(formData));
-}
-
-if (localStorage.getItem(FEEDBACK)) {
-  let getFormData = localStorage.getItem(FEEDBACK);
-  let parseFormData = JSON.parse(getFormData);
-
-  if (parseFormData) {
-    input.value = parseFormData.email || '';
-    text.value = parseFormData.message || '';
-  }
+function saveDataOnImput() {
+  const feedback = {
+    email: emailInput.value,
+    message: messageInput.value,
+  };
+  save(LOCALSTORAGE_KEY, feedback);
 }
 
 function onFormSubmit(e) {
   e.preventDefault();
-  e.currentTarget.reset();
-  localStorage.clear();
-  console.log(formData);
-  formData = {};
+
+  const email = emailInput.value;
+  const message = messageInput.value;
+  if (!email || !message) {
+    alert('Fill all field please');
+    return;
+  }
+
+  showFeedback();
+  feedbackForm.reset();
+  clearLocalStorage();
+}
+
+function showFeedback() {
+  const feedback = load(LOCALSTORAGE_KEY);
+  console.log(feedback);
+}
+
+function updateInputs() {
+  const storageData = load(LOCALSTORAGE_KEY) || '';
+
+  emailInput.value = storageData.email || '';
+  messageInput.value = storageData.message || '';
+}
+
+function clearLocalStorage() {
+  remove(LOCALSTORAGE_KEY);
 }
